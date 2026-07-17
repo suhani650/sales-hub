@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  ::selection {
+    background: rgba(91, 110, 245, 0.4);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #2a3350 transparent;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-panel/60 backdrop-blur-xl border border-white/[0.06] shadow-glass;
+  }
+
+  .glass-card {
+    @apply glass rounded-2xl transition-all duration-300;
+  }
+
+  .glass-card:hover {
+    @apply border-indigo/40 shadow-glow -translate-y-1;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-panel2 rounded-lg;
+  }
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    background-size: 700px 100%;
+    animation: shimmer 1.8s infinite linear;
+  }
+
+  .btn-primary {
+    @apply relative overflow-hidden bg-gradient-to-r from-indigo to-indigo-soft text-white font-medium
+      px-5 py-2.5 rounded-xl shadow-glow transition-transform duration-200 active:scale-95 hover:scale-[1.03];
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-soft via-cyan to-indigo-soft;
+    background-size: 200% auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
