@@ -427,3 +427,13 @@ model ActivityLog {
   @@index([entity, entityId])
   @@map("activity_logs")
 }
+
+model OtpVerification {
+  id        Int      @id @default(autoincrement())
+  target    String   @unique @db.VarChar(160) // email or phone number
+  otp       String   @db.VarChar(10)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("otp_verifications")
+}

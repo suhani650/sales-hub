@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../config/prisma.js";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/tokens.js";
+import { sendEmail } from "../utils/mail.js";
 
 const REFRESH_COOKIE = "nexora_rt";
 const cookieOpts = {
@@ -32,8 +33,8 @@ function randomCode(prefix, length = 6) {
 export async function register(req, res) {
   const { name, email, password, phone, role, storeName, gstNumber, region } = req.body;
 
-  if (!name || !email || !password || !role) {
-    return res.status(400).json({ error: "Name, email, password, and role are required." });
+  if (!name || !email || !password || !role || !phone) {
+    return res.status(400).json({ error: "Name, email, mobile number, password, and role are required." });
   }
 
   if (!PUBLIC_ROLES.includes(role)) {
@@ -50,27 +51,43 @@ export async function register(req, res) {
 
   const normalizedEmail = email.toLowerCase();
 
-  const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-  if (existing) {
-    return res.status(409).json({ error: "An account with this email already exists." });
-  }
-
-  const roleRow = await prisma.role.findUnique({ where: { name: role } });
-  if (!roleRow) {
-    return res.status(500).json({ error: "Role is not configured on the server." });
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
   try {
-    const user = await prisma.$transaction(async (tx) => {
+    const existing = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: normalizedEmail },
+          { phone: phone }
+        ]
+      }
+    });
+
+    if (existing) {
+      if (existing.isVerified) {
+        return res.status(409).json({ error: "An account with this email or phone number already exists." });
+      } else {
+        // Delete unverified user to reset registration flow
+        await prisma.user.delete({ where: { id: existing.id } });
+      }
+    }
+
+    const roleRow = await prisma.role.findUnique({ where: { name: role } });
+    if (!roleRow) {
+      return res.status(500).json({ error: "Role is not configured on the server." });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Create user as inactive/unverified
+    await prisma.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
         data: {
           name,
           email: normalizedEmail,
-          phone: phone || null,
+          phone,
           passwordHash,
           roleId: roleRow.id,
+          isActive: false,
+          isVerified: false,
         },
       });
 
@@ -85,7 +102,6 @@ export async function register(req, res) {
         const baseSlug = slugify(storeName);
         let slug = baseSlug;
         let attempt = 0;
-        // Ensure slug uniqueness without failing the whole registration.
         while (await tx.vendor.findUnique({ where: { storeSlug: slug } })) {
           attempt += 1;
           slug = `${baseSlug}-${attempt}`;
@@ -110,39 +126,30 @@ export async function register(req, res) {
       }
 
       await tx.activityLog.create({
-        data: { userId: createdUser.id, action: "REGISTER", entity: "user", entityId: createdUser.id, ipAddress: req.ip },
+        data: { userId: createdUser.id, action: "REGISTER_PENDING", entity: "user", entityId: createdUser.id, ipAddress: req.ip },
       });
-
-      return createdUser;
     });
 
-    const fullUser = await prisma.user.findUnique({ where: { id: user.id }, include: { role: true } });
+    // Generate signup OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
-    const accessToken = signAccessToken(fullUser);
-    const refreshToken = signRefreshToken(fullUser);
-    await prisma.user.update({ where: { id: fullUser.id }, data: { refreshToken, lastLoginAt: new Date() } });
+    await prisma.otpVerification.upsert({
+      where: { target: normalizedEmail },
+      update: { otp, expiresAt },
+      create: { target: normalizedEmail, otp, expiresAt },
+    });
 
-    res.cookie(REFRESH_COOKIE, refreshToken, cookieOpts);
+    await sendEmail(
+      normalizedEmail,
+      "SALESHUB - Complete Your Account Registration",
+      `<p>Thank you for signing up! Your verification OTP code is: <strong>${otp}</strong>.</p><p>This code is valid for 10 minutes.</p>`
+    );
 
-    const responseBody = {
-      accessToken,
-      user: {
-        id: fullUser.id,
-        name: fullUser.name,
-        email: fullUser.email,
-        role: fullUser.role.name,
-        avatarUrl: fullUser.avatarUrl,
-      },
-    };
-
-    if (role === "VENDOR") {
-      responseBody.message = "Your seller account is pending Super Admin approval.";
-    }
-
-    res.status(201).json(responseBody);
+    res.status(200).json({ message: "OTP sent to your email address. Please verify.", email: normalizedEmail });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Could not create account. Please try again." });
+    res.status(500).json({ error: "Could not initiate registration. Please try again." });
   }
 }
 
@@ -234,4 +241,195 @@ export async function me(req, res) {
     role: user.role.name,
     avatarUrl: user.avatarUrl,
   });
+}
+
+export async function verifySignup(req, res) {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({ error: "Email address and OTP are required." });
+  }
+
+  try {
+    const normalizedEmail = email.toLowerCase();
+    const record = await prisma.otpVerification.findUnique({ where: { target: normalizedEmail } });
+    if (!record || record.otp !== otp || new Date() > record.expiresAt) {
+      console.log("[OTP verification debug]:", {
+        found: !!record,
+        recordOtp: record?.otp,
+        inputOtp: otp,
+        isExpired: record ? new Date() > record.expiresAt : null,
+        now: new Date().toISOString(),
+        expiresAt: record?.expiresAt?.toISOString()
+      });
+      return res.status(400).json({ error: "Invalid or expired OTP." });
+    }
+
+    // Delete OTP record
+    await prisma.otpVerification.delete({ where: { target: normalizedEmail } });
+
+    // Activate user
+    const user = await prisma.user.findFirst({
+      where: { email: normalizedEmail },
+      include: { role: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { isVerified: true, isActive: true },
+    });
+
+    // Generate JWT access & refresh tokens
+    const fullUser = { ...updatedUser, role: user.role };
+    const accessToken = signAccessToken(fullUser);
+    const refreshToken = signRefreshToken(fullUser);
+
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: fullUser.id }, data: { refreshToken, lastLoginAt: new Date() } }),
+      prisma.activityLog.create({
+        data: { userId: fullUser.id, action: "REGISTER_VERIFIED", entity: "user", entityId: fullUser.id, ipAddress: req.ip },
+      }),
+    ]);
+
+    res.cookie(REFRESH_COOKIE, refreshToken, cookieOpts);
+
+    const responseBody = {
+      accessToken,
+      user: {
+        id: fullUser.id,
+        name: fullUser.name,
+        email: fullUser.email,
+        role: fullUser.role.name,
+        avatarUrl: fullUser.avatarUrl,
+      },
+    };
+
+    if (fullUser.role.name === "VENDOR") {
+      responseBody.message = "Your seller account is pending Super Admin approval.";
+    }
+
+    res.status(201).json(responseBody);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not verify registration. Please try again." });
+  }
+}
+
+export async function loginRequest(req, res) {
+  const { target } = req.body;
+
+  if (!target) {
+    return res.status(400).json({ error: "Email or mobile number is required." });
+  }
+
+  try {
+    const normalizedTarget = target.toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: normalizedTarget },
+          { phone: target },
+        ],
+        deletedAt: null,
+      },
+      include: { role: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "Account not found with this email or mobile number." });
+    }
+
+    if (!user.isVerified || !user.isActive) {
+      return res.status(403).json({ error: "This account is not verified or has been deactivated." });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min expiry
+
+    // Save in verification table using user's email
+    await prisma.otpVerification.upsert({
+      where: { target: user.email },
+      update: { otp, expiresAt },
+      create: { target: user.email, otp, expiresAt },
+    });
+
+    await sendEmail(
+      user.email,
+      "SALESHUB - Your Login OTP Code",
+      `<p>Your SALESHUB login OTP verification code is: <strong>${otp}</strong>.</p><p>This code is valid for 5 minutes.</p>`
+    );
+
+    res.status(200).json({
+      message: "OTP sent to your registered email address.",
+      target: user.email,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not send login OTP. Please try again." });
+  }
+}
+
+export async function loginVerify(req, res) {
+  const { target, otp } = req.body;
+
+  if (!target || !otp) {
+    return res.status(400).json({ error: "Target and OTP are required." });
+  }
+
+  try {
+    const record = await prisma.otpVerification.findUnique({ where: { target } });
+    if (!record || record.otp !== otp || new Date() > record.expiresAt) {
+      return res.status(400).json({ error: "Invalid or expired OTP." });
+    }
+
+    // Delete verification record
+    await prisma.otpVerification.delete({ where: { target } });
+
+    // Fetch user
+    const normalizedTarget = target.toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: normalizedTarget },
+          { phone: target },
+        ],
+        deletedAt: null,
+      },
+      include: { role: true },
+    });
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({ error: "User is no longer active." });
+    }
+
+    const accessToken = signAccessToken(user);
+    const refreshToken = signRefreshToken(user);
+
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: user.id }, data: { refreshToken, lastLoginAt: new Date() } }),
+      prisma.activityLog.create({
+        data: { userId: user.id, action: "LOGIN_OTP", entity: "user", entityId: user.id, ipAddress: req.ip },
+      }),
+    ]);
+
+    res.cookie(REFRESH_COOKIE, refreshToken, cookieOpts);
+    res.json({
+      accessToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role.name,
+        avatarUrl: user.avatarUrl,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not verify login OTP. Please try again." });
+  }
 }
