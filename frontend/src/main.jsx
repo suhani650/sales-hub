@@ -7,6 +7,8 @@ import { store } from "./store/index.js";
 import App from "./App.jsx";
 import "./index.css";
 
+import { ToastProvider } from "./context/ToastContext.jsx";
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
@@ -16,7 +18,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <App />
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </Provider>

@@ -28,6 +28,9 @@ export default function Register() {
   const [role, setRole] = useState("CUSTOMER");
   const [serverError, setServerError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const {
     register,
     handleSubmit,
@@ -49,21 +52,96 @@ export default function Register() {
     setServerError(null);
     setLoading(true);
     try {
-      const { data } = await api.post("/auth/register", { ...values, role });
-      setAccessToken(data.accessToken);
-      dispatch(setUser(data.user));
-
-      if (data.user.role === "VENDOR") {
-        // Vendors need Super Admin approval before they can list products.
-        navigate("/", { state: { pendingApproval: true } });
-      } else {
-        navigate("/");
-      }
+      await api.post("/auth/register", { ...values, role });
+      setRegisteredEmail(values.email);
+      setShowOtp(true);
     } catch (err) {
       setServerError(err.response?.data?.error || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleVerifyOtp(e) {
+    e.preventDefault();
+    if (!otpValue || otpValue.length !== 6) {
+      setServerError("Please enter a valid 6-digit OTP.");
+      return;
+    }
+    setServerError(null);
+    setLoading(true);
+    try {
+      const { data } = await api.post("/auth/verify-signup", {
+        email: registeredEmail,
+        otp: otpValue
+      });
+      setAccessToken(data.accessToken);
+      dispatch(setUser(data.user));
+
+      if (data.user.role === "VENDOR") {
+        navigate("/", { state: { pendingApproval: true } });
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      setServerError(err.response?.data?.error || "Invalid OTP code. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (showOtp) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-mesh px-6 py-10">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md bg-panel border border-white/10 rounded-2xl p-8 backdrop-blur-md"
+        >
+          <div className="flex items-center gap-2 font-display font-semibold text-lg mb-8">
+            <HiOutlineSquares2X2 className="text-indigo" size={22} />
+            SALESHUB
+          </div>
+          <h1 className="font-display text-2xl font-semibold mb-1">Verify your email</h1>
+          <p className="text-sm text-muted mb-6">
+            We sent a 6-digit OTP code to <span className="text-white font-medium">{registeredEmail}</span>.
+          </p>
+
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2 bg-panel2 border border-white/10 rounded-xl px-3.5 py-2.5 focus-within:border-indigo/50 transition-colors">
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="Enter 6-digit OTP"
+                  className="bg-transparent w-full text-center text-lg tracking-widest font-mono focus:outline-none"
+                  value={otpValue}
+                  onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ""))}
+                />
+              </div>
+            </div>
+
+            {serverError && <p className="text-xs text-amber">{serverError}</p>}
+
+            <button type="submit" disabled={loading} className="btn-primary w-full justify-center flex mt-2">
+              {loading ? "Verifying OTP…" : "Verify & Complete Signup"}
+            </button>
+          </form>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowOtp(false);
+              setOtpValue("");
+              setServerError(null);
+            }}
+            className="text-xs text-muted hover:underline mt-6 block text-center w-full bg-transparent border-0 outline-none cursor-pointer"
+          >
+            Go back to signup
+          </button>
+        </motion.div>
+      </div>
+    );
   }
 
   return (
@@ -104,7 +182,14 @@ export default function Register() {
                 type="text"
                 placeholder="Full name"
                 className="bg-transparent w-full text-sm focus:outline-none"
-                {...register("name", { required: "Name is required" })}
+                {...register("name", {
+                  required: "Name is required",
+                  maxLength: { value: 120, message: "Name cannot exceed 120 characters" },
+                  pattern: {
+                    value: /^[A-Za-z\s.'-]+$/,
+                    message: "Name can only contain letters, spaces, and punctuation (.-')",
+                  },
+                })}
               />
             </div>
             {errors.name && <p className="text-xs text-amber mt-1">{errors.name.message}</p>}
@@ -119,8 +204,14 @@ export default function Register() {
                 className="bg-transparent w-full text-sm focus:outline-none"
                 {...register("email", {
                   required: "Email is required",
-                  pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email" },
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Enter a valid email address",
+                  },
                 })}
+                onChange={(e) => {
+                  e.target.value = e.target.value.replace(/\s/g, "");
+                }}
               />
             </div>
             {errors.email && <p className="text-xs text-amber mt-1">{errors.email.message}</p>}
@@ -133,7 +224,16 @@ export default function Register() {
                 type="tel"
                 placeholder="Mobile number"
                 className="bg-transparent w-full text-sm focus:outline-none"
-                {...register("phone", { required: "Mobile number is required" })}
+                {...register("phone", {
+                  required: "Mobile number is required",
+                  pattern: {
+                    value: /^\+?[1-9]\d{1,14}$/,
+                    message: "Enter a valid international phone format (e.g. +91XXXXXXXXXX)",
+                  },
+                })}
+                onChange={(e) => {
+                  e.target.value = e.target.value.replace(/(?!^\+)[^\d]/g, "");
+                }}
               />
             </div>
             {errors.phone && <p className="text-xs text-amber mt-1">{errors.phone.message}</p>}

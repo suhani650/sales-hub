@@ -22,9 +22,10 @@ export default function Login() {
       setAccessToken(data.accessToken);
       dispatch(setUser(data.user));
       if (data.user.role === "SUPER_ADMIN") navigate("/admin");
+      else if (data.user.role === "CUSTOMER") navigate("/dashboard");
       else navigate("/");
     } catch (err) {
-      setServerError(err.response?.data?.error || "Something went wrong. Please try again.");
+      setServerError(err.response?.data?.error || "Invalid email or password.");
     } finally {
       setLoading(false);
     }
@@ -84,9 +85,6 @@ export default function Login() {
           <Link to="/register" className="text-indigo hover:underline">
             Create an account
           </Link>
-        </p>
-        <p className="text-xs text-muted mt-2 text-center">
-          Demo: admin@saleshub.dev / Passw0rd!
         </p>
       </motion.div>
     </div>
