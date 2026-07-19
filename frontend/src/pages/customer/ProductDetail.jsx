@@ -4,12 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   HiOutlineChevronLeft,
-  HiOutlineTag,
-  HiStar,
-  HiOutlineStar,
 } from "react-icons/hi2";
 import { api } from "../../lib/api.js";
-import GlassCard from "../../components/GlassCard.jsx";
 import { useToast } from "../../context/ToastContext.jsx";
 
 // Import Modular Sub-Components
@@ -161,7 +157,7 @@ export default function ProductDetail() {
       </div>
 
       {/* Main product card */}
-      <div className="grid lg:grid-cols-2 gap-8 items-start">
+      <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
         <ProductGallery
           product={product}
           selectedImageIdx={selectedImageIdx}
@@ -181,7 +177,7 @@ export default function ProductDetail() {
       </div>
 
       {/* Tabs / detailed sections */}
-      <div className="grid lg:grid-cols-3 gap-8 pt-6 border-t border-white/[0.06]">
+      <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 pt-6 border-t border-white/[0.06]">
         {/* Left 2 Cols: Details and Reviews write form */}
         <div className="lg:col-span-2 space-y-10">
           <div className="space-y-4">

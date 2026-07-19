@@ -6,7 +6,6 @@ import {
   HiOutlineMagnifyingGlass,
   HiOutlineAdjustmentsHorizontal,
   HiOutlineChevronLeft,
-  HiOutlineChevronRight,
   HiOutlineTag,
   HiOutlineChevronDown,
 } from "react-icons/hi2";
@@ -149,6 +148,8 @@ export default function Shop() {
     [isFetching, isLoading, subPage, loadedProducts.length, totalItems]
   );
 
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+
   const toggleParent = (parentId) => {
     setExpandedParents((prev) => ({
       ...prev,
@@ -173,16 +174,23 @@ export default function Shop() {
   const totalPageBlocks = Math.ceil(totalItems / 18);
   const hasFinishedBlock = subPage === 3 || loadedProducts.length >= totalItems || loadedProducts.length >= 18;
 
+  const hasActiveFilters =
+    selectedCategory !== "all" ||
+    searchInput ||
+    minPriceInput ||
+    maxPriceInput ||
+    sort !== "newest";
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-bold tracking-tight text-white">Shop Catalog</h1>
+        <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight text-white">Shop Catalog</h1>
         <p className="text-sm text-muted mt-1">Browse, filter, and discover products</p>
       </div>
 
-      <div className="grid lg:grid-cols-4 gap-6 items-start">
-        {/* Filters Sidebar (Sticky only on desktop md/lg views) */}
-        <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-6">
+      <div className="grid lg:grid-cols-4 gap-4 lg:gap-6 items-start">
+        {/* Filters Sidebar (Collapsible on mobile, sticky on desktop lg views) */}
+        <div className={`lg:col-span-1 space-y-6 lg:sticky lg:top-6 ${showMobileFilters ? "block" : "hidden lg:block"}`}>
           <GlassCard tilt={false} className="p-6 space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
               <span className="font-display font-semibold flex items-center gap-2 text-sm text-white">
@@ -191,7 +199,12 @@ export default function Shop() {
               </span>
               <button
                 onClick={handleClearFilters}
-                className="text-xs text-indigo-soft hover:text-white transition-colors"
+                disabled={!hasActiveFilters}
+                className={`text-xs transition-colors ${
+                  hasActiveFilters
+                    ? "text-indigo-soft hover:text-white cursor-pointer"
+                    : "text-muted opacity-30 cursor-not-allowed"
+                }`}
               >
                 Clear all
               </button>
@@ -317,6 +330,15 @@ export default function Shop() {
               <span className="text-white font-semibold">{totalItems}</span> products
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+              {/* Mobile Filters Toggle Button */}
+              <button
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                className="lg:hidden flex items-center justify-center gap-2 px-4 py-2 border border-white/10 rounded-xl bg-panel2 text-xs text-muted hover:text-white hover:border-indigo/35 transition-all w-full sm:w-auto"
+              >
+                <HiOutlineAdjustmentsHorizontal size={16} className="text-indigo-soft" />
+                <span>{showMobileFilters ? "Hide Filters" : "Filters"}</span>
+              </button>
+
               {/* Search bar */}
               <div className="flex items-center gap-2 bg-panel2 border border-white/10 rounded-xl px-3 py-2 focus-within:border-indigo/50 transition-colors w-full sm:w-64">
                 <HiOutlineMagnifyingGlass className="text-muted shrink-0" size={16} />
@@ -368,7 +390,7 @@ export default function Shop() {
           ) : (
             <>
               {/* Responsive Grid */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                 {loadedProducts.map((p) => {
                   const hasDiscount = p.mrp && parseFloat(p.mrp) > parseFloat(p.price);
                   const discountPercent = hasDiscount
