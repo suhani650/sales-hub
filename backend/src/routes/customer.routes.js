@@ -15,6 +15,7 @@ import {
   getCart,
   addToCart,
   removeFromCart,
+  updateCartItemQuantity,
 } from "../controllers/cart.controller.js";
 
 const router = Router();
@@ -28,6 +29,7 @@ router.get("/categories", requireAuth, requireRole("CUSTOMER"), getCategories);
 // Cart management
 router.get("/cart", requireAuth, requireRole("CUSTOMER"), getCart);
 router.post("/cart", requireAuth, requireRole("CUSTOMER"), addToCart);
+router.put("/cart/:id", requireAuth, requireRole("CUSTOMER"), updateCartItemQuantity);
 router.delete("/cart/:id", requireAuth, requireRole("CUSTOMER"), removeFromCart);
 
 export default router;

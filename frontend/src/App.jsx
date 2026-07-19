@@ -13,6 +13,7 @@ import CustomerDashboard from "./pages/customer/CustomerDashboard.jsx";
 import CustomerLayout from "./layouts/CustomerLayout.jsx";
 import Shop from "./pages/customer/Shop.jsx";
 import ProductDetail from "./pages/customer/ProductDetail.jsx";
+import Cart from "./pages/customer/Cart.jsx";
 
 const pageTransition = {
   initial: { opacity: 0, y: 12 },
@@ -79,6 +80,14 @@ export default function App() {
               element={
                 <Page>
                   <ProductDetail />
+                </Page>
+              }
+            />
+            <Route
+              path="cart"
+              element={
+                <Page>
+                  <Cart />
                 </Page>
               }
             />

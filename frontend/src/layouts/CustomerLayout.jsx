@@ -1,11 +1,14 @@
+import { useState, useEffect, useRef } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  HiOutlineSquares2X2,
+  HiOutlineHome,
   HiOutlineShoppingBag,
   HiOutlineArrowLeftOnRectangle,
   HiOutlineChevronLeft,
+  HiOutlineShoppingCart,
+  HiOutlineSquares2X2,
 } from "react-icons/hi2";
 import { toggleSidebar } from "../store/uiSlice.js";
 import { api, setAccessToken } from "../lib/api.js";
@@ -19,9 +22,36 @@ export default function CustomerLayout() {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const collapsedRef = useRef(collapsed);
+
+  useEffect(() => {
+    collapsedRef.current = collapsed;
+  }, [collapsed]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1023px)");
+    setIsMobile(media.matches);
+    
+    // Auto-collapse on initial mobile viewport load
+    if (media.matches && !collapsedRef.current) {
+      dispatch(toggleSidebar());
+    }
+
+    const listener = (e) => {
+      setIsMobile(e.matches);
+      if (e.matches && !collapsedRef.current) {
+        dispatch(toggleSidebar());
+      }
+    };
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, [dispatch]);
+
   const NAV = [
-    { to: "/dashboard", icon: HiOutlineSquares2X2, label: "Overview", end: true },
+    { to: "/dashboard", icon: HiOutlineHome, label: "Overview", end: true },
     { to: "/dashboard/shop", icon: HiOutlineShoppingBag, label: "Shop Products" },
+    { to: "/dashboard/cart", icon: HiOutlineShoppingCart, label: "My Cart" },
   ];
 
   async function handleLogout() {
@@ -36,11 +66,25 @@ export default function CustomerLayout() {
 
   return (
     <div className="flex min-h-screen bg-void bg-mesh">
+      {/* Mobile Backdrop Overlay */}
+      {isMobile && !collapsed && (
+        <div
+          onClick={() => dispatch(toggleSidebar())}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+        />
+      )}
+
       {/* Sidebar */}
       <motion.aside
-        animate={{ width: collapsed ? 76 : 240 }}
+        animate={
+          isMobile
+            ? { x: collapsed ? "-100%" : 0, width: 240 }
+            : { x: 0, width: collapsed ? 76 : 240 }
+        }
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="h-screen sticky top-0 glass border-r border-white/[0.06] flex flex-col shrink-0 z-40"
+        className={`h-screen top-0 glass border-r border-white/[0.06] flex flex-col shrink-0 z-50 ${
+          isMobile ? "fixed left-0 bottom-0 shadow-2xl" : "sticky"
+        }`}
       >
         <div className="flex items-center gap-2 px-5 py-6 font-display font-semibold overflow-hidden whitespace-nowrap">
           <HiOutlineSquares2X2 className="text-indigo shrink-0" size={22} />
@@ -53,6 +97,11 @@ export default function CustomerLayout() {
               key={item.to}
               to={item.to}
               end={item.end}
+              onClick={() => {
+                if (isMobile && !collapsed) {
+                  dispatch(toggleSidebar());
+                }
+              }}
               className={({ isActive }) =>
                 `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors relative ${
                   isActive ? "text-white bg-indigo/15 border border-indigo/20" : "text-muted hover:text-white hover:bg-white/[0.04]"
@@ -86,7 +135,7 @@ export default function CustomerLayout() {
       {/* Main Content Area */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Simple Top Bar */}
-        <header className="h-16 border-b border-white/[0.06] flex items-center justify-between px-6 bg-panel/30 backdrop-blur-sm">
+        <header className="h-16 border-b border-white/[0.06] flex items-center justify-between px-4 md:px-6 bg-panel/30 backdrop-blur-sm">
           <button
             onClick={() => dispatch(toggleSidebar())}
             className="p-1.5 border border-white/10 rounded-lg bg-panel/50 hover:bg-panel text-muted hover:text-white transition-colors"
@@ -104,7 +153,7 @@ export default function CustomerLayout() {
         </header>
 
         {/* Content body */}
-        <main className="p-6 max-w-[1600px] mx-auto w-full flex-1">
+        <main className="p-4 md:p-6 max-w-[1600px] mx-auto w-full flex-1">
           <Outlet />
         </main>
       </div>

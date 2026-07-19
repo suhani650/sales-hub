@@ -148,3 +148,45 @@ export async function removeFromCart(req, res) {
     res.status(500).json({ error: "Internal server error." });
   }
 }
+
+export async function updateCartItemQuantity(req, res) {
+  const { id } = req.params; // CartItem ID
+  const { quantity } = req.body;
+
+  try {
+    const customer = await prisma.customer.findUnique({
+      where: { userId: req.user.id },
+    });
+
+    if (!customer) {
+      return res.status(404).json({ error: "Customer profile not found." });
+    }
+
+    const itemId = parseInt(id);
+    const qty = parseInt(quantity);
+
+    if (isNaN(qty) || qty <= 0) {
+      return res.status(400).json({ error: "Quantity must be a positive integer." });
+    }
+
+    // Verify cart item belongs to this customer's cart
+    const item = await prisma.cartItem.findUnique({
+      where: { id: itemId },
+      include: { cart: true },
+    });
+
+    if (!item || item.cart.customerId !== customer.id) {
+      return res.status(404).json({ error: "Cart item not found." });
+    }
+
+    const updatedItem = await prisma.cartItem.update({
+      where: { id: itemId },
+      data: { quantity: qty },
+    });
+
+    res.json({ message: "Cart item quantity updated.", item: updatedItem });
+  } catch (err) {
+    console.error("Error updating cart item quantity:", err);
+    res.status(500).json({ error: "Internal server error." });
+  }
+}
