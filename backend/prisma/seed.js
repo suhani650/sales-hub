@@ -71,6 +71,28 @@ async function main() {
     });
   }
 
+  console.log("Seeding reviewer customer...");
+  const reviewerUser = await prisma.user.upsert({
+    where: { email: "reviewer@saleshub.dev" },
+    update: {},
+    create: {
+      name: "Kabir Sharma",
+      email: "reviewer@saleshub.dev",
+      passwordHash,
+      roleId: roles.CUSTOMER.id,
+      isVerified: true,
+    },
+  });
+
+  const reviewer = await prisma.customer.upsert({
+    where: { userId: reviewerUser.id },
+    update: {},
+    create: {
+      userId: reviewerUser.id,
+      referralCode: "KABIR100",
+    },
+  });
+
   console.log("Seeding categories and subcategories...");
   const categoryTree = [
     {
@@ -163,7 +185,7 @@ async function main() {
     }
   }
 
-  console.log("Generating 5 products in each subcategory programmatically...");
+  console.log("Generating 5 products in each subcategory programmatically with reviews...");
   const brandList = Object.values(brands);
 
   for (const subcat of subcategoryList) {
@@ -177,7 +199,7 @@ async function main() {
       const mrp = parseFloat((price * (1.1 + Math.random() * 0.3)).toFixed(2));
       const sku = `${subcat.slug.slice(0, 4).toUpperCase()}-${brand.name.toUpperCase()}-${100 + i}`;
 
-      await prisma.product.upsert({
+      const product = await prisma.product.upsert({
         where: { slug },
         update: {},
         create: {
@@ -191,6 +213,33 @@ async function main() {
           sku,
           description: `This is a premium grade ${name} engineered for superior performance in ${subcat.name.toLowerCase()}. Certified by ${brand.name} standards.`,
           vendorId: vendor.id,
+          ratingAvg: 4.5,
+          ratingCount: 2,
+        }
+      });
+
+      // Seed mock reviews for each product
+      await prisma.review.upsert({
+        where: { id: product.id * 2 },
+        update: {},
+        create: {
+          id: product.id * 2,
+          productId: product.id,
+          customerId: reviewer.id,
+          rating: 5,
+          comment: `Absolutely loved this ${subcat.name.toLowerCase()} product! Exceeded my expectations.`,
+        }
+      });
+
+      await prisma.review.upsert({
+        where: { id: product.id * 2 + 1 },
+        update: {},
+        create: {
+          id: product.id * 2 + 1,
+          productId: product.id,
+          customerId: reviewer.id,
+          rating: 4,
+          comment: `Very good performance and value for money. Highly recommend buying.`,
         }
       });
     }
