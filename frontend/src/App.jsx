@@ -10,6 +10,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import AdminVendors from "./pages/admin/AdminVendors.jsx";
 import ComingSoon from "./pages/admin/ComingSoon.jsx";
 import CustomerDashboard from "./pages/customer/CustomerDashboard.jsx";
+import CustomerLayout from "./layouts/CustomerLayout.jsx";
+import Shop from "./pages/customer/Shop.jsx";
 
 const pageTransition = {
   initial: { opacity: 0, y: 12 },
@@ -54,14 +56,24 @@ export default function App() {
         />
 
         <Route element={<ProtectedRoute allow={["CUSTOMER"]} />}>
-          <Route
-            path="/dashboard"
-            element={
-              <Page>
-                <CustomerDashboard />
-              </Page>
-            }
-          />
+          <Route path="/dashboard" element={<CustomerLayout />}>
+            <Route
+              index
+              element={
+                <Page>
+                  <CustomerDashboard />
+                </Page>
+              }
+            />
+            <Route
+              path="shop"
+              element={
+                <Page>
+                  <Shop />
+                </Page>
+              }
+            />
+          </Route>
         </Route>
 
         <Route element={<ProtectedRoute allow={["SUPER_ADMIN"]} />}>
