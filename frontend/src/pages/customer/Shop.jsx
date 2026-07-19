@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   HiOutlineMagnifyingGlass,
@@ -381,57 +382,59 @@ export default function Shop() {
                       key={p.id}
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group flex flex-col justify-between h-96 relative"
+                      className="group flex flex-col justify-between h-96 relative cursor-pointer"
                     >
-                      <GlassCard className="p-5 flex flex-col justify-between h-full hover:border-indigo/35 transition-all duration-300">
-                        <div className="space-y-4">
-                          {/* Image Placeholder with category icon */}
-                          <div className="h-32 bg-white/[0.02] border border-white/[0.04] rounded-xl flex items-center justify-center text-muted group-hover:text-indigo-soft group-hover:bg-white/[0.04] transition-all relative overflow-hidden">
-                            <HiOutlineTag size={36} />
-                            {hasDiscount && (
-                              <span className="absolute top-2.5 right-2.5 text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-md">
-                                -{discountPercent}% OFF
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo/10 text-indigo-soft px-2 py-0.5 rounded">
-                                {p.category.name}
-                              </span>
-                              {p.brand && (
-                                <span className="text-[10px] font-medium text-muted">
-                                  by {p.brand.name}
+                      <Link to={`/dashboard/products/${p.slug}`} className="h-full block">
+                        <GlassCard className="p-5 flex flex-col justify-between h-full hover:border-indigo/35 transition-all duration-300">
+                          <div className="space-y-4">
+                            {/* Image Placeholder with category icon */}
+                            <div className="h-32 bg-white/[0.02] border border-white/[0.04] rounded-xl flex items-center justify-center text-muted group-hover:text-indigo-soft group-hover:bg-white/[0.04] transition-all relative overflow-hidden">
+                              <HiOutlineTag size={36} />
+                              {hasDiscount && (
+                                <span className="absolute top-2.5 right-2.5 text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-md">
+                                  -{discountPercent}% OFF
                                 </span>
                               )}
                             </div>
-                            <h3 className="font-display font-semibold text-sm text-white group-hover:text-indigo-soft transition-colors line-clamp-1">
-                              {p.name}
-                            </h3>
-                            <p className="text-xs text-muted line-clamp-2 mt-1">
-                              {p.description || "No description provided."}
-                            </p>
-                          </div>
-                        </div>
 
-                        {/* Price footer */}
-                        <div className="mt-4 pt-4 border-t border-white/[0.05] flex items-center justify-between">
-                          <div>
-                            <span className="text-lg font-mono font-bold text-white">
-                              ₹{parseFloat(p.price).toLocaleString("en-IN")}
-                            </span>
-                            {hasDiscount && (
-                              <span className="text-xs font-mono text-muted line-through ml-2">
-                                ₹{parseFloat(p.mrp).toLocaleString("en-IN")}
-                              </span>
-                            )}
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo/10 text-indigo-soft px-2 py-0.5 rounded">
+                                  {p.category.name}
+                                </span>
+                                {p.brand && (
+                                  <span className="text-[10px] font-medium text-muted">
+                                    by {p.brand.name}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="font-display font-semibold text-sm text-white group-hover:text-indigo-soft transition-colors line-clamp-1">
+                                {p.name}
+                              </h3>
+                              <p className="text-xs text-muted line-clamp-2 mt-1">
+                                {p.description || "No description provided."}
+                              </p>
+                            </div>
                           </div>
-                          <span className="text-[10px] font-mono text-muted">
-                            SKU: {p.sku}
-                          </span>
-                        </div>
-                      </GlassCard>
+
+                          {/* Price footer */}
+                          <div className="mt-4 pt-4 border-t border-white/[0.05] flex items-center justify-between">
+                            <div>
+                              <span className="text-lg font-mono font-bold text-white">
+                                ₹{parseFloat(p.price).toLocaleString("en-IN")}
+                              </span>
+                              {hasDiscount && (
+                                <span className="text-xs font-mono text-muted line-through ml-2">
+                                  ₹{parseFloat(p.mrp).toLocaleString("en-IN")}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-mono text-muted">
+                              SKU: {p.sku}
+                            </span>
+                          </div>
+                        </GlassCard>
+                      </Link>
                     </motion.div>
                   );
                 })}
