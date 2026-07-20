@@ -298,7 +298,15 @@ export default function Shop() {
                           <div className="space-y-4">
                             {/* Image Placeholder with category icon */}
                             <div className="h-32 bg-white/[0.02] border border-white/[0.04] rounded-xl flex items-center justify-center text-muted group-hover:text-indigo-soft group-hover:bg-white/[0.04] transition-all relative overflow-hidden">
-                              <HiOutlineTag size={36} />
+                              {p.images && p.images.length > 0 ? (
+                                <img
+                                  src={p.images[0].url.startsWith("http") ? p.images[0].url : `http://localhost:5000${p.images[0].url}`}
+                                  alt={p.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <HiOutlineTag size={36} />
+                              )}
                               {hasDiscount && (
                                 <span className="absolute top-2.5 right-2.5 text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-md">
                                   -{discountPercent}% OFF

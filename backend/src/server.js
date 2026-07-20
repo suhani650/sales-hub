@@ -18,6 +18,7 @@ import swaggerJsdoc from "swagger-jsdoc";
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import customerRoutes from "./routes/customer.routes.js";
+import sellerRoutes from "./routes/seller/index.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -74,6 +75,7 @@ app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/customer", customerRoutes);
+app.use("/api/seller", sellerRoutes);
 
 app.get("/api/health", (req, res) =>
   res.json({ status: "ok", time: new Date().toISOString() }),

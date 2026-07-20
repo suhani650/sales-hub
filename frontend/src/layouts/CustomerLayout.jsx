@@ -34,7 +34,7 @@ export default function CustomerLayout() {
   useEffect(() => {
     const media = window.matchMedia("(max-width: 1023px)");
     setIsMobile(media.matches);
-    
+
     // Auto-collapse on initial mobile viewport load
     if (media.matches && !collapsedRef.current) {
       dispatch(toggleSidebar());
@@ -60,7 +60,7 @@ export default function CustomerLayout() {
   async function handleLogout() {
     try {
       await api.post("/auth/logout");
-    } catch (err) {}
+    } catch (err) { }
     setAccessToken(null);
     dispatch(clearUser());
     showToast("Successfully logged out.", "info");
@@ -88,9 +88,8 @@ export default function CustomerLayout() {
             : { x: 0, width: collapsed ? 76 : 240 }
         }
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className={`h-screen top-0 glass border-r border-white/[0.06] flex flex-col shrink-0 z-50 ${
-          isMobile ? "fixed left-0 bottom-0 shadow-2xl" : "sticky"
-        }`}
+        className={`h-screen top-0 glass border-r border-white/[0.06] flex flex-col shrink-0 z-50 ${isMobile ? "fixed left-0 bottom-0 shadow-2xl" : "sticky"
+          }`}
       >
         <div className="flex items-center gap-2 px-5 py-6 font-display font-semibold overflow-hidden whitespace-nowrap">
           <HiOutlineSquares2X2 className="text-indigo shrink-0" size={22} />
@@ -109,8 +108,7 @@ export default function CustomerLayout() {
                 }
               }}
               className={({ isActive }) =>
-                `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors relative ${
-                  isActive ? "text-white bg-indigo/15 border border-indigo/20" : "text-muted hover:text-white hover:bg-white/[0.04]"
+                `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors relative ${isActive ? "text-white bg-indigo/15 border border-indigo/20" : "text-muted hover:text-white hover:bg-white/[0.04]"
                 }`
               }
             >
@@ -131,10 +129,9 @@ export default function CustomerLayout() {
               }
             }}
             className={({ isActive }) =>
-              `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors border ${
-                isActive
-                  ? "text-white bg-indigo/15 border-indigo/20"
-                  : "text-muted hover:text-white hover:bg-white/[0.04] border-transparent"
+              `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors border ${isActive
+                ? "text-white bg-indigo/15 border-indigo/20"
+                : "text-muted hover:text-white hover:bg-white/[0.04] border-transparent"
               }`
             }
           >

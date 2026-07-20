@@ -23,6 +23,7 @@ export default function Login() {
       dispatch(setUser(data.user));
       if (data.user.role === "SUPER_ADMIN") navigate("/admin");
       else if (data.user.role === "CUSTOMER") navigate("/dashboard");
+      else if (data.user.role === "VENDOR") navigate("/seller");
       else navigate("/");
     } catch (err) {
       setServerError(err.response?.data?.error || "Invalid email or password.");
