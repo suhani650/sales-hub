@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   HiOutlineShoppingBag,
   HiOutlineChevronLeft,
 } from "react-icons/hi2";
 import { api } from "../../lib/api.js";
+import GlassCard from "../../components/GlassCard.jsx";
 import { useToast } from "../../context/ToastContext.jsx";
 
 // Import Modular Components
@@ -14,6 +15,7 @@ import CartSummary from "./components/CartSummary.jsx";
 export default function Cart() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const navigate = useNavigate();
 
   // Fetch cart query
   const { data: cart, isLoading, isError } = useQuery({
@@ -94,10 +96,8 @@ export default function Cart() {
     removeItemMutation.mutate(itemId);
   };
 
-  const handleCheckoutSuccess = () => {
-    showToast("Checkout completed successfully! Your order has been placed.", "success");
-    // Clear cart or redirect (for mock checkout, we can invalidate queries)
-    queryClient.invalidateQueries(["customer-cart"]);
+  const handleCheckoutRedirect = () => {
+    navigate("/dashboard/checkout");
   };
 
   return (
@@ -161,7 +161,7 @@ export default function Cart() {
 
           {/* Pricing Summary Side Panel */}
           <div className="lg:col-span-1">
-            <CartSummary subtotal={subtotal} onCheckout={handleCheckoutSuccess} />
+            <CartSummary subtotal={subtotal} onCheckout={handleCheckoutRedirect} />
           </div>
         </div>
       )}

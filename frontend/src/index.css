@@ -48,6 +48,23 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-soft via-cyan to-indigo-soft;
     background-size: 200% auto;
   }
+
+  /* Global Select Arrow & Dark Option Overrides */
+  select {
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M7%209l3%203%203-3%22%20stroke%3D%22%239CA3AF%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E") !important;
+    background-size: 18px !important;
+    background-position: right 10px center !important;
+    background-repeat: no-repeat !important;
+    padding-right: 2.25rem !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+  }
+
+  option {
+    background-color: #0f111a !important;
+    color: #ffffff !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

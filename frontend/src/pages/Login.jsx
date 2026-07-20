@@ -32,12 +32,12 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-mesh px-6">
+    <div className="min-h-screen flex items-center justify-center bg-mesh px-4 sm:px-6 py-8 sm:py-10">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="glass-card w-full max-w-sm p-8"
+        className="glass-card w-full max-w-sm p-6 sm:p-8"
       >
         <div className="flex items-center gap-2 font-display font-semibold text-lg mb-8">
           <HiOutlineSquares2X2 className="text-indigo" size={22} />

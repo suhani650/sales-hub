@@ -4,8 +4,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   HiOutlineChevronLeft,
+  HiOutlineTag,
+  HiStar,
+  HiOutlineStar,
 } from "react-icons/hi2";
 import { api } from "../../lib/api.js";
+import GlassCard from "../../components/GlassCard.jsx";
 import { useToast } from "../../context/ToastContext.jsx";
 
 // Import Modular Sub-Components

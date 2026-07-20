@@ -112,10 +112,11 @@ model Customer {
   referralCode  String  @unique @map("referral_code") @db.VarChar(20)
   createdAt    DateTime @default(now()) @map("created_at")
 
-  orders   Order[]
-  carts    Cart[]
-  wishlist Wishlist[]
-  reviews  Review[]
+  orders    Order[]
+  carts     Cart[]
+  wishlist  Wishlist[]
+  reviews   Review[]
+  addresses Address[]
 
   @@map("customers")
 }
@@ -436,4 +437,23 @@ model OtpVerification {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("otp_verifications")
+}
+
+model Address {
+  id            Int      @id @default(autoincrement())
+  customerId    Int      @map("customer_id")
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  title         String   @db.VarChar(50)
+  recipientName String   @map("recipient_name") @db.VarChar(120)
+  phone         String   @db.VarChar(20)
+  street        String   @db.VarChar(255)
+  city          String   @db.VarChar(100)
+  state         String   @db.VarChar(100)
+  pincode       String   @db.VarChar(12)
+  isDefault     Boolean  @default(false) @map("is_default")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@map("addresses")
 }

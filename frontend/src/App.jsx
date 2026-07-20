@@ -14,6 +14,11 @@ import CustomerLayout from "./layouts/CustomerLayout.jsx";
 import Shop from "./pages/customer/Shop.jsx";
 import ProductDetail from "./pages/customer/ProductDetail.jsx";
 import Cart from "./pages/customer/Cart.jsx";
+import Checkout from "./pages/customer/Checkout.jsx";
+import CheckoutSuccess from "./pages/customer/CheckoutSuccess.jsx";
+import OrdersList from "./pages/customer/OrdersList.jsx";
+import OrderDetail from "./pages/customer/OrderDetail.jsx";
+import Profile from "./pages/customer/Profile.jsx";
 
 const pageTransition = {
   initial: { opacity: 0, y: 12 },
@@ -88,6 +93,46 @@ export default function App() {
               element={
                 <Page>
                   <Cart />
+                </Page>
+              }
+            />
+            <Route
+              path="checkout"
+              element={
+                <Page>
+                  <Checkout />
+                </Page>
+              }
+            />
+            <Route
+              path="checkout/success"
+              element={
+                <Page>
+                  <CheckoutSuccess />
+                </Page>
+              }
+            />
+            <Route
+              path="orders"
+              element={
+                <Page>
+                  <OrdersList />
+                </Page>
+              }
+            />
+            <Route
+              path="orders/:id"
+              element={
+                <Page>
+                  <OrderDetail />
+                </Page>
+              }
+            />
+            <Route
+              path="profile"
+              element={
+                <Page>
+                  <Profile />
                 </Page>
               }
             />

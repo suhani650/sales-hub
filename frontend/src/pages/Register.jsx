@@ -11,6 +11,7 @@ import {
   HiOutlinePhone,
   HiOutlineBuildingStorefront,
   HiOutlineMapPin,
+  HiOutlineChevronDown,
 } from "react-icons/hi2";
 import { api, setAccessToken } from "../lib/api.js";
 import { setUser } from "../store/authSlice.js";
@@ -41,6 +42,8 @@ export default function Register() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const password = watch("password");
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   function selectRole(next) {
     setRole(next);
@@ -92,11 +95,11 @@ export default function Register() {
 
   if (showOtp) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-mesh px-6 py-10">
+      <div className="min-h-screen flex items-center justify-center bg-mesh px-4 sm:px-6 py-8 sm:py-10">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md bg-panel border border-white/10 rounded-2xl p-8 backdrop-blur-md"
+          className="w-full max-w-md bg-panel border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-md"
         >
           <div className="flex items-center gap-2 font-display font-semibold text-lg mb-8">
             <HiOutlineSquares2X2 className="text-indigo" size={22} />
@@ -145,12 +148,12 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-mesh px-6 py-10">
+    <div className="min-h-screen flex items-center justify-center bg-mesh px-4 sm:px-6 py-8 sm:py-10">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="glass-card w-full max-w-md p-8"
+        className="glass-card w-full max-w-md p-6 sm:p-8"
       >
         <div className="flex items-center gap-2 font-display font-semibold text-lg mb-8">
           <HiOutlineSquares2X2 className="text-indigo" size={22} />
@@ -159,19 +162,62 @@ export default function Register() {
         <h1 className="font-display text-2xl font-semibold mb-1">Create your account</h1>
         <p className="text-sm text-muted mb-6">Join as a customer, seller, or field sales officer</p>
 
-        <div className="grid grid-cols-3 gap-1.5 bg-panel2 border border-white/10 rounded-xl p-1 mb-6">
-          {ROLE_TABS.map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() => selectRole(tab.value)}
-              className={`text-[11px] sm:text-xs font-medium rounded-lg py-2 px-1 transition-colors ${
-                role === tab.value ? "bg-indigo text-white" : "text-muted hover:text-white"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="mb-6 space-y-2 relative">
+          <label className="text-xs font-semibold text-muted uppercase tracking-wider">Join As</label>
+          
+          {/* Custom Dropdown Trigger Box */}
+          <button
+            type="button"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="w-full flex items-center justify-between gap-2 bg-panel2 border border-white/10 rounded-xl px-3.5 py-2.5 focus:border-indigo/50 hover:border-white/20 transition-all text-left"
+          >
+            <span className="text-sm text-white">
+              {ROLE_TABS.find((tab) => tab.value === role)?.label}
+            </span>
+            <HiOutlineChevronDown
+              size={16}
+              className={`text-muted transition-transform duration-200 shrink-0 ${isDropdownOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {/* Custom Dropdown Options Sheet */}
+          <AnimatePresence>
+            {isDropdownOpen && (
+              <>
+                {/* Overlay backdrop block */}
+                <div className="fixed inset-0 z-10 bg-transparent" onClick={() => setIsDropdownOpen(false)} />
+                
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-panel border border-white/10 rounded-xl overflow-hidden shadow-2xl z-20 backdrop-blur-xl p-1"
+                >
+                  {ROLE_TABS.map((tab) => (
+                    <button
+                      key={tab.value}
+                      type="button"
+                      onClick={() => {
+                        selectRole(tab.value);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full text-left text-xs px-3.5 py-2.5 rounded-lg transition-colors flex items-center justify-between ${
+                        role === tab.value
+                          ? "bg-indigo/20 text-white font-medium border border-indigo/20"
+                          : "text-muted hover:text-white hover:bg-white/[0.04]"
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      {role === tab.value && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo shadow-glow shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
