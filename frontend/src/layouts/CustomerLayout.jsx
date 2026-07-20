@@ -9,6 +9,8 @@ import {
   HiOutlineChevronLeft,
   HiOutlineShoppingCart,
   HiOutlineSquares2X2,
+  HiOutlineClipboardDocumentList,
+  HiOutlineUser,
 } from "react-icons/hi2";
 import { toggleSidebar } from "../store/uiSlice.js";
 import { api, setAccessToken } from "../lib/api.js";
@@ -52,6 +54,7 @@ export default function CustomerLayout() {
     { to: "/dashboard", icon: HiOutlineHome, label: "Overview", end: true },
     { to: "/dashboard/shop", icon: HiOutlineShoppingBag, label: "Shop Products" },
     { to: "/dashboard/cart", icon: HiOutlineShoppingCart, label: "My Cart" },
+    { to: "/dashboard/orders", icon: HiOutlineClipboardDocumentList, label: "My Orders" },
   ];
 
   async function handleLogout() {
@@ -63,6 +66,9 @@ export default function CustomerLayout() {
     showToast("Successfully logged out.", "info");
     navigate("/login");
   }
+
+  // Prepend api host for avatar path if relative
+  const avatarPath = user?.avatarUrl ? `http://localhost:5000${user.avatarUrl}` : null;
 
   return (
     <div className="flex min-h-screen bg-void bg-mesh">
@@ -115,13 +121,40 @@ export default function CustomerLayout() {
         </nav>
 
         {/* User profile & Logout */}
-        <div className="p-3 border-t border-white/[0.06] space-y-2">
-          {!collapsed && (
-            <div className="px-3 py-2">
-              <p className="text-xs font-semibold text-white truncate">{user?.name}</p>
-              <p className="text-[10px] text-muted truncate">{user?.email}</p>
-            </div>
-          )}
+        <div className="p-3 border-t border-white/[0.06] space-y-1">
+          {/* Clickable Profile Navigation */}
+          <NavLink
+            to="/dashboard/profile"
+            onClick={() => {
+              if (isMobile && !collapsed) {
+                dispatch(toggleSidebar());
+              }
+            }}
+            className={({ isActive }) =>
+              `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors border ${
+                isActive
+                  ? "text-white bg-indigo/15 border-indigo/20"
+                  : "text-muted hover:text-white hover:bg-white/[0.04] border-transparent"
+              }`
+            }
+          >
+            {avatarPath ? (
+              <img
+                src={avatarPath}
+                alt=""
+                className="w-5 h-5 rounded-full object-cover shrink-0 border border-white/10"
+              />
+            ) : (
+              <HiOutlineUser size={20} className="shrink-0 text-muted" />
+            )}
+            {!collapsed && (
+              <div className="min-w-0 flex-1 text-left">
+                <p className="text-xs font-semibold text-white truncate leading-tight">{user?.name}</p>
+                <p className="text-[10px] text-muted truncate mt-0.5 leading-none">{user?.email}</p>
+              </div>
+            )}
+          </NavLink>
+
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-rose-400 hover:bg-rose-500/10 transition-colors"

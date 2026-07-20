@@ -9,6 +9,8 @@ import { api } from "../../lib/api.js";
 import GlassCard from "../../components/GlassCard.jsx";
 import SkeletonCard from "../../components/SkeletonCard.jsx";
 
+import { Link } from "react-router-dom";
+
 const STATUS_STYLES = {
   PENDING: "bg-amber/15 text-amber",
   CONFIRMED: "bg-indigo/15 text-indigo-soft",
@@ -127,6 +129,7 @@ export default function CustomerDashboard() {
                 <thead>
                   <tr className="border-b border-white/[0.06] text-muted text-xs font-semibold uppercase">
                     <th className="pb-4">Order ID</th>
+                    <th className="pb-4">Items</th>
                     <th className="pb-4">Date</th>
                     <th className="pb-4">Total</th>
                     <th className="pb-4">Status</th>
@@ -135,7 +138,29 @@ export default function CustomerDashboard() {
                 <tbody className="divide-y divide-white/[0.04]">
                   {data.orders.map((o) => (
                     <tr key={o.id} className="group hover:bg-white/[0.01]">
-                      <td className="py-4 font-mono font-medium text-white">{o.orderNumber}</td>
+                      <td className="py-4 font-mono font-medium text-indigo-soft hover:underline">
+                        <Link to={`/dashboard/orders/${o.id}`}>{o.orderNumber}</Link>
+                      </td>
+                      <td className="py-2">
+                        <div className="flex items-center gap-1.5">
+                          {o.items?.map((item) => {
+                            const imgUrl = item.product.images?.[0]?.url;
+                            return (
+                              <div
+                                key={item.id}
+                                title={`${item.product.name} (x${item.quantity})`}
+                                className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/10 overflow-hidden flex items-center justify-center shrink-0 hover:border-indigo-soft/40 transition-colors"
+                              >
+                                {imgUrl ? (
+                                  <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-2.5 h-2.5 border border-dashed border-white/20 rounded-full" />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
                       <td className="py-4 text-muted">
                         {new Date(o.createdAt).toLocaleDateString("en-IN", {
                           day: "numeric",
@@ -144,7 +169,7 @@ export default function CustomerDashboard() {
                         })}
                       </td>
                       <td className="py-4 font-semibold text-white">
-                        ₹{(o.grandTotal / 100).toLocaleString("en-IN")}
+                        ₹{parseFloat(o.grandTotal).toLocaleString("en-IN")}
                       </td>
                       <td className="py-4">
                         <span

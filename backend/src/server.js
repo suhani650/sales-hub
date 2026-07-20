@@ -1,6 +1,7 @@
 import "dotenv/config";
 console.log("JWT_SECRET =", process.env.JWT_SECRET);
 console.log("JWT_REFRESH_SECRET =", process.env.JWT_REFRESH_SECRET);
+import path from "path";
 import express from "express";
 import http from "http";
 import { Server as SocketServer } from "socket.io";
@@ -20,6 +21,9 @@ import customerRoutes from "./routes/customer.routes.js";
 
 const app = express();
 const server = http.createServer(app);
+
+// Serve uploads folder statically
+app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));
 
 const io = new SocketServer(server, {
   cors: { origin: process.env.CLIENT_URL, credentials: true },
