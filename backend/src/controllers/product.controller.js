@@ -60,6 +60,7 @@ export async function getProducts(req, res) {
         include: {
           category: true,
           brand: true,
+          images: true,
         },
       }),
       prisma.product.count({ where }),

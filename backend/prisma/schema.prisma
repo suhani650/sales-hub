@@ -50,6 +50,9 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
+  resetPasswordToken   String?   @map("reset_password_token") @db.VarChar(255)
+  resetPasswordExpires DateTime? @map("reset_password_expires")
+
   vendor            Vendor?
   customer          Customer?
   fieldSalesOfficer FieldSalesOfficer?
@@ -90,10 +93,40 @@ model Vendor {
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
-  products    Product[]
-  orderItems  OrderItem[]
-  coupons     Coupon[]
-  inventory   Inventory[]
+  businessName       String?   @map("business_name") @db.VarChar(160)
+  phone              String?   @db.VarChar(20)
+  description        String?   @db.Text
+  logo               String?   @db.VarChar(500)
+  banner             String?   @db.VarChar(500)
+  accountHolder      String?   @map("account_holder") @db.VarChar(160)
+  accountNumber      String?   @map("account_number") @db.VarChar(40)
+  ifscCode           String?   @map("ifsc_code") @db.VarChar(20)
+  bankName           String?   @map("bank_name") @db.VarChar(160)
+  panNumber          String?   @map("pan_number") @db.VarChar(20)
+  aadhaar            String?   @db.VarChar(20)
+  pan                String?   @db.VarChar(20)
+  gst                String?   @db.VarChar(30)
+  kycStatus          String    @default("NOT_SUBMITTED") @map("kyc_status") @db.VarChar(20)
+  emailNotifications Boolean   @default(true) @map("email_notifications")
+  smsNotifications   Boolean   @default(true) @map("sms_notifications")
+  pushNotifications  Boolean   @default(true) @map("push_notifications")
+  socialLinks        Json?     @map("social_links")
+  website            String?   @db.VarChar(255)
+  registrationNumber String?   @map("registration_number") @db.VarChar(60)
+  supportHours       String?   @map("support_hours") @db.VarChar(100)
+  primaryColor       String?   @map("primary_color") @db.VarChar(20)
+  secondaryColor     String?   @map("secondary_color") @db.VarChar(20)
+  fontFamily         String?   @map("font_family") @db.VarChar(60)
+
+  products           Product[]
+  orderItems         OrderItem[]
+  coupons            Coupon[]
+  inventory          Inventory[]
+  audiencesegment    audiencesegment[]
+  warehouses         Warehouse[]
+  marketingcampaign  marketingcampaign[]
+  brands             Brand[]
+  supportTickets     SupportTicket[]
 
   @@index([status])
   @@map("vendors")
@@ -146,18 +179,35 @@ model Category {
   iconUrl   String?    @map("icon_url") @db.VarChar(500)
   isActive  Boolean    @default(true) @map("is_active")
   products  Product[]
+  brands    Brand[]
 
   @@index([parentId])
   @@map("categories")
 }
 
 model Brand {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique @db.VarChar(120)
-  logoUrl  String?   @map("logo_url") @db.VarChar(500)
-  products Product[]
+  id          Int         @id @default(autoincrement())
+  name        String      @unique @db.VarChar(120)
+  logoUrl     String?     @map("logo_url") @db.VarChar(500)
+  website     String?     @db.VarChar(255)
+  categoryId  Int?        @map("category_id")
+  status      BrandStatus @default(PENDING)
+  createdBy   Int?        @map("created_by_vendor_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  category    Category?   @relation(fields: [categoryId], references: [id])
+  vendor      Vendor?     @relation(fields: [createdBy], references: [id])
+  products    Product[]
 
+  @@index([categoryId])
+  @@index([createdBy], map: "brands_created_by_vendor_id_fkey")
   @@map("brands")
+}
+
+enum BrandStatus {
+  APPROVED
+  PENDING
+  REVIEW
 }
 
 enum ProductStatus {
@@ -259,6 +309,9 @@ model Order {
   shippingAddress String     @map("shipping_address") @db.VarChar(500)
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  trackingNumber String?     @map("tracking_number") @db.VarChar(80)
+  courierName    String?     @map("courier_name") @db.VarChar(120)
 
   items    OrderItem[]
   payments Payment[]
@@ -401,15 +454,19 @@ model Coupon {
 // ---------------------------------------------------------------------------
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String   @db.VarChar(160)
-  body      String   @db.VarChar(500)
-  isRead    Boolean  @default(false) @map("is_read")
-  createdAt DateTime @default(now()) @map("created_at")
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String    @db.VarChar(160)
+  body      String    @db.VarChar(500)
+  isRead    Boolean   @default(false) @map("is_read")
+  createdAt DateTime  @default(now()) @map("created_at")
+  readAt    DateTime? @map("read_at")
+  type      String    @default("INFO") @db.VarChar(30)
 
   @@index([userId])
+  @@index([userId, isRead])
+  @@index([userId, type])
   @@map("notifications")
 }
 
@@ -456,4 +513,181 @@ model Address {
 
   @@index([customerId])
   @@map("addresses")
+}
+
+model Warehouse {
+
+ id Int @id @default(autoincrement())
+
+ vendorId Int
+
+ name String
+
+ location String
+
+ stockUnits Int @default(0)
+
+ pendingDispatch Int @default(0)
+
+ completedOrders Int @default(0)
+
+ status String
+
+ createdAt DateTime @default(now())
+
+ updatedAt DateTime @updatedAt
+
+ vendor Vendor @relation(fields:[vendorId], references:[id])
+
+ @@index([vendorId])
+
+}
+
+
+
+model SupportTicket {
+  id           Int      @id @default(autoincrement())
+  vendorId     Int
+  customerId   Int?
+  ticketNumber String   @unique
+  subject      String
+  description  String
+  priority     String   @default("MEDIUM")
+  status       String   @default("OPEN")
+  assignedTo   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  vendor       Vendor   @relation(fields: [vendorId], references: [id])
+
+  @@index([vendorId])
+  @@map("support_tickets")
+}
+
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+
+model NotificationQueue {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  @@map("notification_queue")
+}
+
+
+model ActivityTimeline {
+  id          String   @id @default(cuid())
+  vendorId    String
+  action      String
+  description String
+  createdAt   DateTime @default(now())
+
+  @@map("activity_timeline")
+}
+
+
+model audiencesegment {
+  id          String   @id
+  vendorId    Int
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  vendors     Vendor   @relation(fields: [vendorId], references: [id], map: "AudienceSegment_vendorId_fkey")
+
+  @@index([vendorId], map: "AudienceSegment_vendorId_fkey")
+}
+
+
+model giftcard {
+  id         String    @id
+  code       String    @unique(map: "GiftCard_code_key")
+  amount     Float
+  status     String    @default("ACTIVE")
+  expiryDate DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+
+model loyaltytransaction {
+  id          String   @id
+  customerId  String
+  points      Int
+  type        String
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+
+model marketingcampaign {
+  id           String    @id
+  vendorId     Int
+  name         String
+  campaignType String
+  subject      String?
+  content      String
+  audienceType String
+  status       String    @default("DRAFT")
+  sentCount    Int       @default(0)
+  openCount    Int       @default(0)
+  clickCount   Int       @default(0)
+  scheduledAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime
+  vendors      Vendor    @relation(fields: [vendorId], references: [id], map: "MarketingCampaign_vendorId_fkey")
+
+  @@index([vendorId], map: "MarketingCampaign_vendorId_fkey")
+}
+
+
+model referral {
+  id           String   @id
+  referrerId   String
+  referredId   String?
+  referralCode String   @unique(map: "Referral_referralCode_key")
+  rewardPoints Int      @default(100)
+  status       String   @default("PENDING")
+  createdAt    DateTime @default(now())
+}
+
+
+model rewardpoint {
+  id         String   @id
+  customerId String
+  points     Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+}
+
+
+model wallet {
+  id         String   @id
+  customerId String   @unique(map: "Wallet_customerId_key")
+  balance    Float    @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+}
+
+
+model wallettransaction {
+  id          String   @id
+  walletId    String
+  amount      Float
+  type        String
+  description String?
+  createdAt   DateTime @default(now())
 }

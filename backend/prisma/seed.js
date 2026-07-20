@@ -184,67 +184,6 @@ async function main() {
       subcategoryList.push(childRecord);
     }
   }
-
-  console.log("Generating 5 products in each subcategory programmatically with reviews...");
-  const brandList = Object.values(brands);
-
-  for (const subcat of subcategoryList) {
-    for (let i = 1; i <= 5; i++) {
-      const name = `${subcat.name} Pro ${String.fromCharCode(64 + i)}-${100 + i}`;
-      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const brand = brandList[Math.floor(Math.random() * brandList.length)];
-      
-      // Generate realistic price ranges
-      const price = parseFloat((300 + Math.random() * 8000).toFixed(2));
-      const mrp = parseFloat((price * (1.1 + Math.random() * 0.3)).toFixed(2));
-      const sku = `${subcat.slug.slice(0, 4).toUpperCase()}-${brand.name.toUpperCase()}-${100 + i}`;
-
-      const product = await prisma.product.upsert({
-        where: { slug },
-        update: {},
-        create: {
-          name,
-          slug,
-          categoryId: subcat.id,
-          brandId: brand.id,
-          price,
-          mrp,
-          status: "ACTIVE",
-          sku,
-          description: `This is a premium grade ${name} engineered for superior performance in ${subcat.name.toLowerCase()}. Certified by ${brand.name} standards.`,
-          vendorId: vendor.id,
-          ratingAvg: 4.5,
-          ratingCount: 2,
-        }
-      });
-
-      // Seed mock reviews for each product
-      await prisma.review.upsert({
-        where: { id: product.id * 2 },
-        update: {},
-        create: {
-          id: product.id * 2,
-          productId: product.id,
-          customerId: reviewer.id,
-          rating: 5,
-          comment: `Absolutely loved this ${subcat.name.toLowerCase()} product! Exceeded my expectations.`,
-        }
-      });
-
-      await prisma.review.upsert({
-        where: { id: product.id * 2 + 1 },
-        update: {},
-        create: {
-          id: product.id * 2 + 1,
-          productId: product.id,
-          customerId: reviewer.id,
-          rating: 4,
-          comment: `Very good performance and value for money. Highly recommend buying.`,
-        }
-      });
-    }
-  }
-
   console.log("Seed complete.");
   console.log("Login: admin@saleshub.dev / Passw0rd!");
 }
